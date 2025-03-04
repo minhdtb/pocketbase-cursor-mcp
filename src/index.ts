@@ -103,7 +103,8 @@ class PocketBaseServer {
       process.env.POCKETBASE_ADMIN_PASSWORD;
 
     if (adminEmail && adminPassword) {
-      (this.pb as any).admins
+      this.pb
+        .collection("_superusers")
         .authWithPassword(adminEmail, adminPassword)
         .then(() => console.error("Admin authentication successful"))
         .catch((err: Error) =>
