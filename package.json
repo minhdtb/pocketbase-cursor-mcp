@@ -1,6 +1,6 @@
 {
   "name": "pocketbase-cursor-mcp",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "description": "PocketBase MCP Server for integration with Cursor AI IDE",
   "main": "build/index.js",
