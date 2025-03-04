@@ -1,96 +1,96 @@
 # PocketBase MCP Server for Cursor AI
 
-Tích hợp PocketBase với Cursor AI thông qua giao thức Model Context Protocol (MCP). Server này cho phép Cursor AI tương tác trực tiếp với cơ sở dữ liệu PocketBase, hỗ trợ quản lý bộ sưu tập, bản ghi và nhiều thao tác khác.
+Integration of PocketBase with Cursor AI through the Model Context Protocol (MCP). This server allows Cursor AI to directly interact with PocketBase databases, supporting collection management, record operations, and many other functionalities.
 
-## Tính năng
+## Features
 
-### Quản lý bộ sưu tập (Collection Management)
-- Tạo và quản lý bộ sưu tập với lược đồ tùy chỉnh
-- Di chuyển lược đồ bộ sưu tập với khả năng bảo toàn dữ liệu
-- Quản lý chỉ mục nâng cao (tạo, xóa, liệt kê)
+### Collection Management
+- Create and manage collections with custom schemas
+- Migrate collection schemas with data preservation capabilities
+- Advanced index management (create, delete, list)
 
-### Thao tác với bản ghi (Record Operations)
-- Thao tác CRUD (Create, Read, Update, Delete) cho bản ghi
-- Truy vấn nâng cao với lọc, sắp xếp và tổng hợp
-- Khả năng nhập/xuất hàng loạt
+### Record Operations
+- CRUD operations (Create, Read, Update, Delete) for records
+- Advanced querying with filtering, sorting, and aggregation
+- Bulk import/export capabilities
 
-### Tích hợp với Cursor AI
-- Tạo lược đồ PocketBase từ các interface TypeScript
-- Tạo interface TypeScript từ các bộ sưu tập PocketBase
-- Phân tích dữ liệu bộ sưu tập và cung cấp insights
+### Cursor AI Integration
+- Generate PocketBase schemas from TypeScript interfaces
+- Generate TypeScript interfaces from PocketBase collections
+- Analyze collection data and provide insights
 
-## Cài đặt
+## Installation
 
-### 1. Cài đặt gói npm
+### 1. Install the npm package
 
 ```bash
 npm install -g pocketbase-cursor-mcp
 ```
 
-hoặc 
+or
 
 ```bash
 pnpm add -g pocketbase-cursor-mcp
 ```
 
-### 2. Cấu hình
+### 2. Configuration
 
-Bạn có thể cấu hình PocketBase MCP Server bằng **biến môi trường** hoặc **command line arguments**:
+You can configure the PocketBase MCP Server using **environment variables** or **command line arguments**:
 
-#### Sử dụng biến môi trường
+#### Using environment variables
 
-Tạo file `.env` trong thư mục gốc của dự án:
+Create a `.env` file in the root directory of your project:
 
 ```
 POCKETBASE_URL=http://127.0.0.1:8090
-POCKETBASE_ADMIN_EMAIL=your-admin@example.com  # Tùy chọn
-POCKETBASE_ADMIN_PASSWORD=your-password        # Tùy chọn
+POCKETBASE_ADMIN_EMAIL=your-admin@example.com  # Optional
+POCKETBASE_ADMIN_PASSWORD=your-password        # Optional
 ```
 
-#### Sử dụng command line arguments
+#### Using command line arguments
 
 ```bash
 pocketbase-cursor-mcp --url=http://127.0.0.1:8090 --admin-email=your-admin@example.com --admin-password=your-password
 ```
 
-#### Các options có sẵn
+#### Available options
 
-| Command line arg       | Biến môi trường            | Mô tả                                   |
-|------------------------|----------------------------|----------------------------------------|
-| `--url, -u`            | `POCKETBASE_URL`           | URL của PocketBase server (bắt buộc)    |
-| `--admin-email, -e`    | `POCKETBASE_ADMIN_EMAIL`   | Email admin (tùy chọn)                  |
-| `--admin-password, -p` | `POCKETBASE_ADMIN_PASSWORD`| Mật khẩu admin (tùy chọn)              |
-| `--data-dir, -d`       | `POCKETBASE_DATA_DIR`      | Đường dẫn thư mục dữ liệu (tùy chọn)    |
-| `--port`               | `PORT`                     | Port cho HTTP server (tùy chọn)        |
-| `--host`               | `HOST`                     | Host cho HTTP server (tùy chọn)         |
+| Command line arg       | Environment variable       | Description                            |
+|------------------------|-----------------------------|----------------------------------------|
+| `--url, -u`            | `POCKETBASE_URL`           | PocketBase server URL (required)       |
+| `--admin-email, -e`    | `POCKETBASE_ADMIN_EMAIL`   | Admin email (optional)                 |
+| `--admin-password, -p` | `POCKETBASE_ADMIN_PASSWORD`| Admin password (optional)              |
+| `--data-dir, -d`       | `POCKETBASE_DATA_DIR`      | Custom data directory path (optional)  |
+| `--port`               | `PORT`                     | HTTP server port (optional)            |
+| `--host`               | `HOST`                     | HTTP server host (optional)            |
 
-Sử dụng `pocketbase-cursor-mcp --help` để xem tất cả các tùy chọn.
+Use `pocketbase-cursor-mcp --help` to view all options.
 
-## Cấu hình cho Cursor AI
+## Cursor AI Configuration
 
-### Cấu hình MCP trong Cursor AI
+### Configure MCP in Cursor AI
 
-1. Mở Cursor AI
-2. Mở Settings (hoặc nhấn `Cmd+,` trên macOS, `Ctrl+,` trên Windows/Linux)
-3. Chọn tab "AI"
-4. Cuộn xuống đến phần "Model Context Protocol Servers"
-5. Thêm cấu hình mới với các thông tin sau:
+1. Open Cursor AI
+2. Open Settings (or press `Cmd+,` on macOS, `Ctrl+,` on Windows/Linux)
+3. Select the "AI" tab
+4. Scroll down to "Model Context Protocol Servers"
+5. Add a new configuration with the following information:
 
 **Name**: `pocketbase`  
 **Command**: `npx`  
 **Args**: `pocketbase-cursor-mcp --url=http://127.0.0.1:8090`
 
-Hoặc trực tiếp cung cấp đường dẫn đến file thực thi:
+Or directly provide the path to the executable:
 
-**Command**: Đường dẫn đến node executable (ví dụ: `/usr/bin/node`)  
-**Args**: Đường dẫn đến file thực thi cùng với các tham số (ví dụ: `/usr/local/bin/pocketbase-cursor-mcp --url=http://127.0.0.1:8090`)
+**Command**: Path to node executable (e.g., `/usr/bin/node`)  
+**Args**: Path to the executable file along with parameters (e.g., `/usr/local/bin/pocketbase-cursor-mcp --url=http://127.0.0.1:8090`)
 
-## Sử dụng trong Cursor AI
+## Usage in Cursor AI
 
-Sau khi cấu hình, bạn có thể sử dụng PocketBase MCP trong Cursor AI bằng cách thêm lệnh như sau vào giao diện soạn thảo:
+After configuration, you can use PocketBase MCP in Cursor AI by adding commands like the following to the editing interface:
 
 ```
-Tạo một bộ sưu tập PocketBase từ interface TypeScript sau:
+Create a PocketBase collection from the following TypeScript interface:
 
 interface User {
   username: string;
@@ -107,37 +107,37 @@ interface UserProfile {
 }
 ```
 
-hoặc
+or
 
 ```
-Tạo TypeScript interfaces từ các bộ sưu tập trong cơ sở dữ liệu PocketBase của tôi.
+Generate TypeScript interfaces from the collections in my PocketBase database.
 ```
 
-hoặc 
+or 
 
 ```
-Phân tích dữ liệu trong bộ sưu tập "products" và cung cấp insights.
+Analyze the data in the "products" collection and provide insights.
 ```
 
-## Các công cụ có sẵn
+## Available Tools
 
-### Công cụ PocketBase cơ bản
-- `create_collection`: Tạo bộ sưu tập mới
-- `create_record`: Tạo bản ghi mới
-- `list_records`: Liệt kê bản ghi với bộ lọc tùy chọn
-- `update_record`: Cập nhật bản ghi hiện có
-- `delete_record`: Xóa bản ghi
-- `get_collection_schema`: Lấy lược đồ chi tiết của bộ sưu tập
-- ... và nhiều công cụ khác
+### Basic PocketBase Tools
+- `create_collection`: Create a new collection
+- `create_record`: Create a new record
+- `list_records`: List records with optional filters
+- `update_record`: Update an existing record
+- `delete_record`: Delete a record
+- `get_collection_schema`: Get detailed schema for a collection
+- ... and many more tools
 
-### Công cụ dành riêng cho Cursor AI
-- `generate_pb_schema`: Tạo lược đồ PocketBase từ interface TypeScript
-- `generate_typescript_interfaces`: Tạo TypeScript interfaces từ bộ sưu tập PocketBase
-- `analyze_collection_data`: Phân tích dữ liệu trong bộ sưu tập
+### Cursor AI Specific Tools
+- `generate_pb_schema`: Generate PocketBase schema from TypeScript interfaces
+- `generate_typescript_interfaces`: Generate TypeScript interfaces from PocketBase collections
+- `analyze_collection_data`: Analyze data in a collection
 
-## Ví dụ sử dụng
+## Usage Examples
 
-### Tạo bộ sưu tập từ interface TypeScript
+### Creating a collection from TypeScript interface
 
 ```typescript
 const schema = await mcp.use_tool("pocketbase", "generate_pb_schema", {
@@ -161,7 +161,7 @@ const collection = await mcp.use_tool("pocketbase", "create_collection", {
 });
 ```
 
-### Tạo TypeScript interfaces từ bộ sưu tập PocketBase
+### Generating TypeScript interfaces from PocketBase collections
 
 ```typescript
 const interfaces = await mcp.use_tool("pocketbase", "generate_typescript_interfaces", {
@@ -170,10 +170,10 @@ const interfaces = await mcp.use_tool("pocketbase", "generate_typescript_interfa
   }
 });
 
-// Interfaces có thể được sử dụng trong dự án TypeScript của bạn
+// Interfaces can be used in your TypeScript project
 ```
 
-### Phân tích dữ liệu bộ sưu tập
+### Analyzing collection data
 
 ```typescript
 const analysis = await mcp.use_tool("pocketbase", "analyze_collection_data", {
@@ -183,14 +183,14 @@ const analysis = await mcp.use_tool("pocketbase", "analyze_collection_data", {
   }
 });
 
-// Xem insights về dữ liệu của bạn
+// View insights about your data
 console.log(analysis.insights);
 ```
 
-## Đóng góp
+## Contributing
 
-Đóng góp luôn được hoan nghênh! Vui lòng tạo issue hoặc pull request.
+Contributions are always welcome! Please create an issue or pull request.
 
-## Giấy phép
+## License
 
 MIT
