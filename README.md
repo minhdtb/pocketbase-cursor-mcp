@@ -1,211 +1,196 @@
-# Advanced PocketBase MCP Server
+# PocketBase MCP Server for Cursor AI
 
-A comprehensive MCP server that provides sophisticated tools for interacting with PocketBase databases. This server enables advanced database operations, schema management, and data manipulation through the Model Context Protocol (MCP).
+Tích hợp PocketBase với Cursor AI thông qua giao thức Model Context Protocol (MCP). Server này cho phép Cursor AI tương tác trực tiếp với cơ sở dữ liệu PocketBase, hỗ trợ quản lý bộ sưu tập, bản ghi và nhiều thao tác khác.
 
-<a href="https://glama.ai/mcp/servers/z2xjuegxxh"><img width="380" height="200" src="https://glama.ai/mcp/servers/z2xjuegxxh/badge" alt="pocketbase-mcp-server MCP server" /></a>
+## Tính năng
 
-## Features
+### Quản lý bộ sưu tập (Collection Management)
+- Tạo và quản lý bộ sưu tập với lược đồ tùy chỉnh
+- Di chuyển lược đồ bộ sưu tập với khả năng bảo toàn dữ liệu
+- Quản lý chỉ mục nâng cao (tạo, xóa, liệt kê)
 
-### Collection Management
-- Create and manage collections with custom schemas
-- Migrate collection schemas with data preservation
-- Advanced index management (create, delete, list)
-- Schema validation and type safety
-- Retrieve collection schemas and metadata
+### Thao tác với bản ghi (Record Operations)
+- Thao tác CRUD (Create, Read, Update, Delete) cho bản ghi
+- Truy vấn nâng cao với lọc, sắp xếp và tổng hợp
+- Khả năng nhập/xuất hàng loạt
 
-### Record Operations
-- CRUD operations for records
-- Advanced querying with filtering, sorting, and aggregation
-- Batch import/export capabilities
-- Relationship expansion support
-- Pagination and cursor-based navigation
+### Tích hợp với Cursor AI
+- Tạo lược đồ PocketBase từ các interface TypeScript
+- Tạo interface TypeScript từ các bộ sưu tập PocketBase
+- Phân tích dữ liệu bộ sưu tập và cung cấp insights
 
-### User Management
-- User authentication and token management
-- User account creation and management
-- Password management
-- Role-based access control
-- Session handling
+## Cài đặt
 
-### Database Operations
-- Database backup and restore
-- Multiple export formats (JSON/CSV)
-- Data migration tools
-- Index optimization
-- Batch operations
+### 1. Cài đặt gói npm
 
-## Available Tools
+```bash
+npm install -g pocketbase-cursor-mcp
+```
 
-### Collection Management
-- `create_collection`: Create a new collection with custom schema
-- `get_collection_schema`: Get schema details for a collection
-- `migrate_collection`: Migrate collection schema with data preservation
-- `manage_indexes`: Create, delete, or list collection indexes
+hoặc 
 
-### Record Operations
-- `create_record`: Create a new record in a collection
-- `list_records`: List records with optional filters and pagination
-- `update_record`: Update an existing record
-- `delete_record`: Delete a record
-- `query_collection`: Advanced query with filtering, sorting, and aggregation
-- `import_data`: Import data into a collection with create/update/upsert modes
+```bash
+pnpm add -g pocketbase-cursor-mcp
+```
 
-### User Management
-- `authenticate_user`: Authenticate a user and get auth token
-- `create_user`: Create a new user account
+### 2. Cấu hình
 
-### Database Operations
-- `backup_database`: Create a backup of the PocketBase database with format options
-- `import_data`: Import data with various modes (create/update/upsert)
+Bạn có thể cấu hình PocketBase MCP Server bằng **biến môi trường** hoặc **command line arguments**:
 
-## Configuration
+#### Sử dụng biến môi trường
 
-The server requires the following environment variables:
+Tạo file `.env` trong thư mục gốc của dự án:
 
-- `POCKETBASE_URL`: URL of your PocketBase instance (e.g., "http://127.0.0.1:8090")
+```
+POCKETBASE_URL=http://127.0.0.1:8090
+POCKETBASE_ADMIN_EMAIL=your-admin@example.com  # Tùy chọn
+POCKETBASE_ADMIN_PASSWORD=your-password        # Tùy chọn
+```
 
-Optional environment variables:
-- `POCKETBASE_ADMIN_EMAIL`: Admin email for certain operations
-- `POCKETBASE_ADMIN_PASSWORD`: Admin password
-- `POCKETBASE_DATA_DIR`: Custom data directory path
+#### Sử dụng command line arguments
 
-## Usage Examples
+```bash
+pocketbase-cursor-mcp --url=http://127.0.0.1:8090 --admin-email=your-admin@example.com --admin-password=your-password
+```
 
-### Collection Management
+#### Các options có sẵn
+
+| Command line arg       | Biến môi trường            | Mô tả                                   |
+|------------------------|----------------------------|----------------------------------------|
+| `--url, -u`            | `POCKETBASE_URL`           | URL của PocketBase server (bắt buộc)    |
+| `--admin-email, -e`    | `POCKETBASE_ADMIN_EMAIL`   | Email admin (tùy chọn)                  |
+| `--admin-password, -p` | `POCKETBASE_ADMIN_PASSWORD`| Mật khẩu admin (tùy chọn)              |
+| `--data-dir, -d`       | `POCKETBASE_DATA_DIR`      | Đường dẫn thư mục dữ liệu (tùy chọn)    |
+| `--port`               | `PORT`                     | Port cho HTTP server (tùy chọn)        |
+| `--host`               | `HOST`                     | Host cho HTTP server (tùy chọn)         |
+
+Sử dụng `pocketbase-cursor-mcp --help` để xem tất cả các tùy chọn.
+
+## Cấu hình cho Cursor AI
+
+### Cấu hình MCP trong Cursor AI
+
+1. Mở Cursor AI
+2. Mở Settings (hoặc nhấn `Cmd+,` trên macOS, `Ctrl+,` trên Windows/Linux)
+3. Chọn tab "AI"
+4. Cuộn xuống đến phần "Model Context Protocol Servers"
+5. Thêm cấu hình mới với các thông tin sau:
+
+**Name**: `pocketbase`  
+**Command**: `npx`  
+**Args**: `pocketbase-cursor-mcp --url=http://127.0.0.1:8090`
+
+Hoặc trực tiếp cung cấp đường dẫn đến file thực thi:
+
+**Command**: Đường dẫn đến node executable (ví dụ: `/usr/bin/node`)  
+**Args**: Đường dẫn đến file thực thi cùng với các tham số (ví dụ: `/usr/local/bin/pocketbase-cursor-mcp --url=http://127.0.0.1:8090`)
+
+## Sử dụng trong Cursor AI
+
+Sau khi cấu hình, bạn có thể sử dụng PocketBase MCP trong Cursor AI bằng cách thêm lệnh như sau vào giao diện soạn thảo:
+
+```
+Tạo một bộ sưu tập PocketBase từ interface TypeScript sau:
+
+interface User {
+  username: string;
+  email: string;
+  isActive: boolean;
+  age?: number;
+  profile: UserProfile;
+}
+
+interface UserProfile {
+  bio: string;
+  avatar?: string;
+  socialLinks: string[];
+}
+```
+
+hoặc
+
+```
+Tạo TypeScript interfaces từ các bộ sưu tập trong cơ sở dữ liệu PocketBase của tôi.
+```
+
+hoặc 
+
+```
+Phân tích dữ liệu trong bộ sưu tập "products" và cung cấp insights.
+```
+
+## Các công cụ có sẵn
+
+### Công cụ PocketBase cơ bản
+- `create_collection`: Tạo bộ sưu tập mới
+- `create_record`: Tạo bản ghi mới
+- `list_records`: Liệt kê bản ghi với bộ lọc tùy chọn
+- `update_record`: Cập nhật bản ghi hiện có
+- `delete_record`: Xóa bản ghi
+- `get_collection_schema`: Lấy lược đồ chi tiết của bộ sưu tập
+- ... và nhiều công cụ khác
+
+### Công cụ dành riêng cho Cursor AI
+- `generate_pb_schema`: Tạo lược đồ PocketBase từ interface TypeScript
+- `generate_typescript_interfaces`: Tạo TypeScript interfaces từ bộ sưu tập PocketBase
+- `analyze_collection_data`: Phân tích dữ liệu trong bộ sưu tập
+
+## Ví dụ sử dụng
+
+### Tạo bộ sưu tập từ interface TypeScript
+
 ```typescript
-// Create a new collection
-await mcp.use_tool("pocketbase", "create_collection", {
-  name: "posts",
-  schema: [
-    {
-      name: "title",
-      type: "text",
-      required: true
-    },
-    {
-      name: "content",
-      type: "text",
-      required: true
+const schema = await mcp.use_tool("pocketbase", "generate_pb_schema", {
+  sourceCode: `
+    interface Product {
+      name: string;
+      price: number;
+      description: string;
+      isAvailable: boolean;
+      tags: string[];
     }
-  ]
-});
-
-// Manage indexes
-await mcp.use_tool("pocketbase", "manage_indexes", {
-  collection: "posts",
-  action: "create",
-  index: {
-    name: "title_idx",
-    fields: ["title"],
-    unique: true
+  `,
+  options: {
+    includeTimestamps: true
   }
 });
-```
 
-### Advanced Querying
-```typescript
-// Query with filtering, sorting, and aggregation
-await mcp.use_tool("pocketbase", "query_collection", {
-  collection: "posts",
-  filter: "created >= '2024-01-01'",
-  sort: "-created",
-  aggregate: {
-    totalLikes: "sum(likes)",
-    avgRating: "avg(rating)"
-  },
-  expand: "author,categories"
+const collection = await mcp.use_tool("pocketbase", "create_collection", {
+  name: "products",
+  schema: schema[0].schema
 });
 ```
 
-### Data Import/Export
-```typescript
-// Import data with upsert mode
-await mcp.use_tool("pocketbase", "import_data", {
-  collection: "posts",
-  data: [
-    {
-      title: "First Post",
-      content: "Hello World"
-    },
-    {
-      title: "Second Post",
-      content: "More content"
-    }
-  ],
-  mode: "upsert"
-});
+### Tạo TypeScript interfaces từ bộ sưu tập PocketBase
 
-// Backup database
-await mcp.use_tool("pocketbase", "backup_database", {
-  format: "json" // or "csv"
-});
-```
-
-### Schema Migration
 ```typescript
-// Migrate collection schema
-await mcp.use_tool("pocketbase", "migrate_collection", {
-  collection: "posts",
-  newSchema: [
-    {
-      name: "title",
-      type: "text",
-      required: true
-    },
-    {
-      name: "content",
-      type: "text",
-      required: true
-    },
-    {
-      name: "tags",
-      type: "json",
-      required: false
-    }
-  ],
-  dataTransforms: {
-    // Optional field transformations during migration
-    tags: "JSON.parse(oldTags)"
+const interfaces = await mcp.use_tool("pocketbase", "generate_typescript_interfaces", {
+  options: {
+    includeRelations: true
   }
 });
+
+// Interfaces có thể được sử dụng trong dự án TypeScript của bạn
 ```
 
-## Error Handling
+### Phân tích dữ liệu bộ sưu tập
 
-All tools include comprehensive error handling with detailed error messages. Errors are properly typed and include:
-- Invalid request errors
-- Authentication errors
-- Database operation errors
-- Schema validation errors
-- Network errors
+```typescript
+const analysis = await mcp.use_tool("pocketbase", "analyze_collection_data", {
+  collection: "products",
+  options: {
+    sampleSize: 500
+  }
+});
 
-## Type Safety
+// Xem insights về dữ liệu của bạn
+console.log(analysis.insights);
+```
 
-The server includes TypeScript definitions for all operations, ensuring type safety when using the tools. Each tool's input schema is strictly typed and validated.
+## Đóng góp
 
-## Best Practices
+Đóng góp luôn được hoan nghênh! Vui lòng tạo issue hoặc pull request.
 
-1. Always use proper error handling with try/catch blocks
-2. Validate data before performing operations
-3. Use appropriate indexes for better query performance
-4. Regularly backup your database
-5. Use migrations for schema changes
-6. Follow security best practices for user management
-7. Monitor and optimize database performance
+## Giấy phép
 
-## Development
-
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Copy `.env.example` to `.env` and configure
-4. Build: `npm run build`
-5. Start your PocketBase instance
-6. The MCP server will automatically connect to your PocketBase instance
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+MIT
