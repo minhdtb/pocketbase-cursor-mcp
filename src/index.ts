@@ -104,7 +104,7 @@ class PocketBaseServer {
           // Set a reasonable auto refresh threshold (30 minutes)
           autoRefreshThreshold: 1800,
         })
-        .then(() => {
+        .then(async () => {
           console.error("Admin authentication successful");
         })
         .catch((err: Error) => {
@@ -511,6 +511,20 @@ class PocketBaseServer {
           },
         },
         {
+          name: "delete_collection",
+          description: "Delete a collection from PocketBase",
+          inputSchema: {
+            type: "object",
+            properties: {
+              collection: {
+                type: "string",
+                description: "Collection name or ID to delete",
+              },
+            },
+            required: ["collection"],
+          },
+        },
+        {
           name: "backup_database",
           description: "Create a backup of the PocketBase database",
           inputSchema: {
@@ -809,6 +823,8 @@ class PocketBaseServer {
             return await this.createUser(request.params.arguments);
           case "get_collection_schema":
             return await this.getCollectionSchema(request.params.arguments);
+          case "delete_collection":
+            return await this.deleteCollection(request.params.arguments);
           case "backup_database":
             return await this.backupDatabase(request.params.arguments);
           case "import_data":
@@ -964,8 +980,9 @@ class PocketBaseServer {
         // Add ID field
         typeScriptCode += "  id: string;\n";
 
-        // Add schema fields
-        for (const field of collection.schema) {
+        // Add fields from the collection
+        const fields = collection.fields || [];
+        for (const field of fields) {
           const tsType = this.mapPbTypeToTsType(field.type, field.options);
           const optional = !field.required ? "?" : "";
 
@@ -1035,7 +1052,7 @@ class PocketBaseServer {
       const { collection, options = {} } = args;
       const sampleSize = options.sampleSize || 100;
 
-      // Fetch collection schema and records
+      // Fetch collection and records
       const collectionInfo = await this.pb.collections.getOne(collection);
       const records = await this.pb
         .collection(collection)
@@ -1061,8 +1078,11 @@ class PocketBaseServer {
         };
       }
 
-      // Analyze each field in the schema
-      for (const field of collectionInfo.schema) {
+      // Extract fields from the collection object
+      const fields = collectionInfo.fields || [];
+
+      // Analyze each field
+      for (const field of fields) {
         if (options.fields && !options.fields.includes(field.name)) {
           continue; // Skip fields not in the requested list
         }
@@ -1368,15 +1388,39 @@ class PocketBaseServer {
         content: [
           {
             type: "text",
-            text: JSON.stringify(collection.schema, null, 2),
+            text: JSON.stringify(collection, null, 2),
           },
         ],
       };
     } catch (error: unknown) {
-      const errorMessage = JSON.stringify(error);
+      const errorMessage =
+        error instanceof Error ? error.message : JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
         `Failed to get collection schema: ${errorMessage}`
+      );
+    }
+  }
+
+  private async deleteCollection(args: any) {
+    try {
+      const collection = await this.pb.collections.getOne(args.collection);
+      await this.pb.collections.delete(collection.id);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Successfully deleted collection "${args.collection}"`,
+          },
+        ],
+      };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : JSON.stringify(error);
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to delete collection: ${errorMessage}`
       );
     }
   }
