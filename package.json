@@ -1,6 +1,6 @@
 {
   "name": "pocketbase-cursor-mcp",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "description": "PocketBase MCP Server for integration with Cursor AI IDE",
   "main": "build/index.js",
@@ -8,7 +8,7 @@
     "pocketbase-cursor-mcp": "build/index.js"
   },
   "scripts": {
-    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "build": "tsc && node -e \"require('fs').chmodSync('build/src/index.js', '755')\"",
     "start": "node build/index.js",
     "dev": "tsc -w",
     "prepublishOnly": "npm run build",
@@ -30,6 +30,7 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
     "@types/node": "^20.17.10",
     "@types/yargs": "^17.0.32",
     "typescript": "^5.3.3"

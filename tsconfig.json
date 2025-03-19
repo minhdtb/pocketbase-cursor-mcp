@@ -11,9 +11,17 @@
     "declaration": true,
     "allowJs": true,
     "resolveJsonModule": true,
-    "rootDir": "src",
-    "types": ["node"]
+    "rootDir": ".",
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "build"]
+  "include": [
+    "src/**/*",
+    "tests/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "build"
+  ]
 }

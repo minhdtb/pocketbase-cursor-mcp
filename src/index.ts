@@ -7,12 +7,7 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
-import PocketBase, {
-  CollectionModel,
-  CollectionIndex,
-  CollectionResponse,
-  SchemaField,
-} from "pocketbase";
+import PocketBase, { CollectionModel, SchemaField } from "pocketbase";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import dotenv from "dotenv";
@@ -106,7 +101,9 @@ class PocketBaseServer {
       this.pb
         .collection("_superusers")
         .authWithPassword(adminEmail, adminPassword)
-        .then(() => console.error("Admin authentication successful"))
+        .then(() => {
+          console.error("Admin authentication successful");
+        })
         .catch((err: Error) =>
           console.error("Admin authentication failed:", err)
         );
@@ -136,7 +133,7 @@ class PocketBaseServer {
                 type: "string",
                 description: "Collection name",
               },
-              schema: {
+              fields: {
                 type: "array",
                 description: "Collection schema fields",
                 items: {
@@ -886,8 +883,7 @@ class PocketBaseServer {
   private async createCollection(args: any) {
     try {
       const result = await this.pb.collections.create({
-        name: args.name,
-        schema: args.schema,
+        ...args,
       });
       return {
         content: [
@@ -898,11 +894,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to create collection: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to create collection: ${errorMessage}`
       );
     }
   }
@@ -921,11 +916,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to create record: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to create record: ${errorMessage}`
       );
     }
   }
@@ -954,11 +948,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to list records: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to list records: ${errorMessage}`
       );
     }
   }
@@ -977,11 +970,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to update record: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to update record: ${errorMessage}`
       );
     }
   }
@@ -998,11 +990,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to delete record: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to delete record: ${errorMessage}`
       );
     }
   }
@@ -1021,11 +1012,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Authentication failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Authentication failed: ${errorMessage}`
       );
     }
   }
@@ -1047,11 +1037,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to create user: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to create user: ${errorMessage}`
       );
     }
   }
@@ -1068,11 +1057,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to get collection schema: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to get collection schema: ${errorMessage}`
       );
     }
   }
@@ -1080,7 +1068,7 @@ class PocketBaseServer {
   private async backupDatabase(args: any) {
     try {
       const format = args.format || "json";
-      const collections = await this.pb.collections.getList(1, 100);
+      const collections = await this.pb.collections.getFullList();
       const backup: any = {};
 
       for (const collection of collections) {
@@ -1127,11 +1115,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to backup database: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to backup database: ${errorMessage}`
       );
     }
   }
@@ -1186,11 +1173,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to import data: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to import data: ${errorMessage}`
       );
     }
   }
@@ -1251,11 +1237,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to migrate collection: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to migrate collection: ${errorMessage}`
       );
     }
   }
@@ -1269,14 +1254,7 @@ class PocketBaseServer {
       if (args.sort) options.sort = args.sort;
       if (args.expand) options.expand = args.expand;
 
-      const records = (await collection.getList(
-        1,
-        100,
-        options
-      )) as CollectionResponse;
-      records[Symbol.iterator] = function* () {
-        yield* this.items;
-      };
+      const records = await collection.getList(1, 100, options);
 
       let result: any = { items: records.items };
 
@@ -1324,21 +1302,18 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to query collection: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to query collection: ${errorMessage}`
       );
     }
   }
 
   private async manageIndexes(args: any) {
     try {
-      const collection = (await this.pb.collections.getOne(
-        args.collection
-      )) as CollectionModel;
-      const currentIndexes: CollectionIndex[] = collection.indexes || [];
+      const collection = await this.pb.collections.getOne(args.collection);
+      const currentIndexes: string[] = collection.indexes || [];
       let result;
 
       switch (args.action) {
@@ -1353,21 +1328,21 @@ class PocketBaseServer {
             collection.id,
             {
               ...collection,
-              indexes: [...currentIndexes, args.index as CollectionIndex],
+              indexes: [...currentIndexes, args.index],
             }
           );
           result = updatedCollection.indexes;
           break;
 
         case "delete":
-          if (!args.index?.name) {
+          if (!args.index) {
             throw new McpError(
               ErrorCode.InvalidParams,
               "Index name required for delete action"
             );
           }
           const filteredIndexes = currentIndexes.filter(
-            (idx) => idx.name !== args.index.name
+            (idx) => idx !== args.index
           );
           const collectionAfterDelete = await this.pb.collections.update(
             collection.id,
@@ -1399,11 +1374,10 @@ class PocketBaseServer {
         ],
       };
     } catch (error: unknown) {
+      const errorMessage = JSON.stringify(error);
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to manage indexes: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to manage indexes: ${errorMessage}`
       );
     }
   }
@@ -1417,5 +1391,6 @@ class PocketBaseServer {
 }
 
 // Run the server
+console.log("Starting PocketBase MCP server...");
 const server = new PocketBaseServer();
 server.run().catch(console.error);

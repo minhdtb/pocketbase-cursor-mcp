@@ -1,55 +1,126 @@
-declare module 'pocketbase' {
-  export interface CollectionModel {
-    id: string;
-    name: string;
-    schema: SchemaField[];
-    indexes?: CollectionIndex[];
-    [key: string]: any;
-  }
+/**
+ * This file was @generated using pocketbase-typegen
+ */
 
-  export interface SchemaField {
-    name: string;
-    type: string;
-    required: boolean;
-    options?: Record<string, any>;
-  }
+import type PocketBase from "pocketbase";
+import type { RecordService } from "pocketbase";
 
-  export interface CollectionIndex {
-    name: string;
-    fields: string[];
-    unique?: boolean;
-  }
-
-  export interface CollectionResponse<T = Record<string, any>> {
-    page: number;
-    perPage: number;
-    totalItems: number;
-    totalPages: number;
-    items: T[];
-    [Symbol.iterator](): Iterator<T>;
-  }
-
-  export default class PocketBase {
-    constructor(url: string);
-    
-    collections: {
-      create(data: { name: string; schema: SchemaField[] }): Promise<CollectionModel>;
-      getOne(idOrName: string): Promise<CollectionModel>;
-      getList(page?: number, perPage?: number, options?: any): Promise<CollectionResponse>;
-      update(id: string, data: Partial<CollectionModel>): Promise<CollectionModel>;
-      delete(id: string): Promise<boolean>;
-    };
-
-    collection(name: string): {
-      create(data: Record<string, any>): Promise<Record<string, any>>;
-      getList(page?: number, perPage?: number, options?: any): Promise<CollectionResponse>;
-      getFullList(batch?: number, options?: any): Promise<Record<string, any>[]>;
-      update(id: string, data: Record<string, any>): Promise<Record<string, any>>;
-      delete(id: string): Promise<boolean>;
-      authWithPassword(email: string, password: string): Promise<{
-        token: string;
-        user: Record<string, any>;
-      }>;
-    };
-  }
+export enum Collections {
+  Authorigins = "_authOrigins",
+  Externalauths = "_externalAuths",
+  Mfas = "_mfas",
+  Otps = "_otps",
+  Superusers = "_superusers",
 }
+
+// Alias types for improved usability
+export type IsoDateString = string;
+export type RecordIdString = string;
+export type HTMLString = string;
+
+// System fields
+export type BaseSystemFields<T = never> = {
+  id: RecordIdString;
+  collectionId: string;
+  collectionName: Collections;
+  expand?: T;
+};
+
+export type AuthSystemFields<T = never> = {
+  email: string;
+  emailVisibility: boolean;
+  username: string;
+  verified: boolean;
+} & BaseSystemFields<T>;
+
+// Record types for each collection
+
+export type AuthoriginsRecord = {
+  collectionRef: string;
+  created?: IsoDateString;
+  fingerprint: string;
+  id: string;
+  recordRef: string;
+  updated?: IsoDateString;
+};
+
+export type ExternalauthsRecord = {
+  collectionRef: string;
+  created?: IsoDateString;
+  id: string;
+  provider: string;
+  providerId: string;
+  recordRef: string;
+  updated?: IsoDateString;
+};
+
+export type MfasRecord = {
+  collectionRef: string;
+  created?: IsoDateString;
+  id: string;
+  method: string;
+  recordRef: string;
+  updated?: IsoDateString;
+};
+
+export type OtpsRecord = {
+  collectionRef: string;
+  created?: IsoDateString;
+  id: string;
+  password: string;
+  recordRef: string;
+  sentTo?: string;
+  updated?: IsoDateString;
+};
+
+export type SuperusersRecord = {
+  created?: IsoDateString;
+  email: string;
+  emailVisibility?: boolean;
+  id: string;
+  password: string;
+  tokenKey: string;
+  updated?: IsoDateString;
+  verified?: boolean;
+};
+
+// Response types include system fields and match responses from the PocketBase API
+export type AuthoriginsResponse<Texpand = unknown> =
+  Required<AuthoriginsRecord> & BaseSystemFields<Texpand>;
+export type ExternalauthsResponse<Texpand = unknown> =
+  Required<ExternalauthsRecord> & BaseSystemFields<Texpand>;
+export type MfasResponse<Texpand = unknown> = Required<MfasRecord> &
+  BaseSystemFields<Texpand>;
+export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> &
+  BaseSystemFields<Texpand>;
+export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> &
+  AuthSystemFields<Texpand>;
+
+// Types containing all Records and Responses, useful for creating typing helper functions
+
+export type CollectionRecords = {
+  _authOrigins: AuthoriginsRecord;
+  _externalAuths: ExternalauthsRecord;
+  _mfas: MfasRecord;
+  _otps: OtpsRecord;
+  _superusers: SuperusersRecord;
+};
+
+export type CollectionResponses = {
+  _authOrigins: AuthoriginsResponse;
+  _externalAuths: ExternalauthsResponse;
+  _mfas: MfasResponse;
+  _otps: OtpsResponse;
+  _superusers: SuperusersResponse;
+};
+
+// Type for usage with type asserted PocketBase instance
+// https://github.com/pocketbase/js-sdk#specify-typescript-definitions
+
+export type TypedPocketBase = PocketBase & {
+  collection(idOrName: "_authOrigins"): RecordService<AuthoriginsResponse>;
+  collection(idOrName: "_externalAuths"): RecordService<ExternalauthsResponse>;
+  collection(idOrName: "_mfas"): RecordService<MfasResponse>;
+  collection(idOrName: "_otps"): RecordService<OtpsResponse>;
+  collection(idOrName: "_superusers"): RecordService<SuperusersResponse>;
+};
