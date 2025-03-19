@@ -100,13 +100,18 @@ class PocketBaseServer {
     if (adminEmail && adminPassword) {
       this.pb
         .collection("_superusers")
-        .authWithPassword(adminEmail, adminPassword)
+        .authWithPassword(adminEmail, adminPassword, {
+          // Set a reasonable auto refresh threshold (30 minutes)
+          autoRefreshThreshold: 1800,
+        })
         .then(() => {
           console.error("Admin authentication successful");
         })
-        .catch((err: Error) =>
-          console.error("Admin authentication failed:", err)
-        );
+        .catch((err: Error) => {
+          console.error("Admin authentication failed:", err);
+          // Continue running even if admin auth fails
+          // This allows using the server with limited permissions
+        });
     }
 
     this.setupToolHandlers();
@@ -133,21 +138,168 @@ class PocketBaseServer {
                 type: "string",
                 description: "Collection name",
               },
+              type: {
+                type: "string",
+                description: "Collection type (base, auth, view)",
+                enum: ["base", "auth", "view"],
+                default: "base",
+              },
               fields: {
                 type: "array",
-                description: "Collection schema fields",
+                description: "Collection fields configuration",
                 items: {
                   type: "object",
                   properties: {
-                    name: { type: "string" },
-                    type: { type: "string" },
-                    required: { type: "boolean" },
-                    options: { type: "object" },
+                    name: { type: "string", description: "Field name" },
+                    type: {
+                      type: "string",
+                      description: "Field type",
+                      enum: [
+                        "text",
+                        "number",
+                        "bool",
+                        "email",
+                        "url",
+                        "date",
+                        "select",
+                        "relation",
+                        "file",
+                        "json",
+                        "editor",
+                        "autodate",
+                      ],
+                    },
+                    required: {
+                      type: "boolean",
+                      description: "Whether the field is required",
+                    },
+                    system: {
+                      type: "boolean",
+                      description: "Whether this is a system field",
+                    },
+                    unique: {
+                      type: "boolean",
+                      description:
+                        "Whether the field should have unique values",
+                    },
+                    // TextField options
+                    min: {
+                      type: "number",
+                      description: "Minimum text length or numeric value",
+                    },
+                    max: {
+                      type: "number",
+                      description: "Maximum text length or numeric value",
+                    },
+                    pattern: {
+                      type: "string",
+                      description: "Validation regex pattern for text fields",
+                    },
+                    autogeneratePattern: {
+                      type: "string",
+                      description:
+                        "Pattern for autogenerating field values (for text fields)",
+                    },
+                    // SelectField options
+                    options: {
+                      type: "object",
+                      description: "Field-specific options",
+                      properties: {
+                        values: {
+                          type: "array",
+                          description: "Predefined values for select fields",
+                          items: {
+                            type: "string",
+                          },
+                        },
+                        maxSelect: {
+                          type: "number",
+                          description: "Maximum number of selectable options",
+                        },
+                      },
+                    },
+                    // RelationField options
+                    collectionId: {
+                      type: "string",
+                      description: "Target collection ID for relation fields",
+                    },
+                    cascadeDelete: {
+                      type: "boolean",
+                      description:
+                        "Whether to delete related records when the parent is deleted",
+                    },
+                    maxSelect: {
+                      type: "number",
+                      description:
+                        "Maximum number of relations (1 for single relation, > 1 for multiple)",
+                    },
+                    // AutodateField options
+                    onCreate: {
+                      type: "boolean",
+                      description:
+                        "Whether to set date on record creation (for autodate fields)",
+                    },
+                    onUpdate: {
+                      type: "boolean",
+                      description:
+                        "Whether to update date on record update (for autodate fields)",
+                    },
+                    presentable: {
+                      type: "boolean",
+                      description:
+                        "Whether the field can be used as a presentable field in the UI",
+                    },
+                    hidden: {
+                      type: "boolean",
+                      description: "Whether the field is hidden in the UI",
+                    },
+                  },
+                  required: ["name", "type"],
+                },
+              },
+              listRule: {
+                type: "string",
+                description: "Rule for listing records",
+              },
+              viewRule: {
+                type: "string",
+                description: "Rule for viewing records",
+              },
+              createRule: {
+                type: "string",
+                description: "Rule for creating records",
+              },
+              updateRule: {
+                type: "string",
+                description: "Rule for updating records",
+              },
+              deleteRule: {
+                type: "string",
+                description: "Rule for deleting records",
+              },
+              indexes: {
+                type: "array",
+                items: { type: "string" },
+                description: "Collection indexes",
+              },
+              viewQuery: {
+                type: "string",
+                description: "SQL query for view collections",
+              },
+              passwordAuth: {
+                type: "object",
+                description:
+                  "Password authentication settings for auth collections",
+                properties: {
+                  enabled: { type: "boolean" },
+                  identityFields: {
+                    type: "array",
+                    items: { type: "string" },
                   },
                 },
               },
             },
-            required: ["name", "schema"],
+            required: ["name", "fields"],
           },
         },
         {
@@ -162,7 +314,18 @@ class PocketBaseServer {
               },
               data: {
                 type: "object",
-                description: "Record data",
+                description:
+                  "Record data with field values matching the collection schema",
+              },
+              expand: {
+                type: "string",
+                description:
+                  "Comma-separated list of relation fields to expand in the response (e.g. 'author,comments.user')",
+              },
+              fields: {
+                type: "string",
+                description:
+                  "Comma-separated fields to return in the response (e.g. 'id,title,author')",
               },
             },
             required: ["collection", "data"],
@@ -180,19 +343,36 @@ class PocketBaseServer {
               },
               filter: {
                 type: "string",
-                description: "Filter query",
+                description:
+                  "Filter query using PocketBase filter syntax (e.g. 'status = true && created > \"2022-08-01 10:00:00\"')",
               },
               sort: {
                 type: "string",
-                description: "Sort field and direction",
+                description:
+                  "Sort field and direction (e.g. '-created,title' for descending created date followed by ascending title)",
               },
               page: {
                 type: "number",
-                description: "Page number",
+                description: "Page number for pagination (default: 1)",
               },
               perPage: {
                 type: "number",
-                description: "Items per page",
+                description: "Items per page (default: 50, max: 500)",
+              },
+              expand: {
+                type: "string",
+                description:
+                  "Comma-separated list of relation fields to expand (e.g. 'author,comments.user')",
+              },
+              fields: {
+                type: "string",
+                description:
+                  "Comma-separated fields to return in the response (e.g. 'id,title,author')",
+              },
+              skipTotal: {
+                type: "boolean",
+                description:
+                  "If set to true, the total count query will be skipped to improve performance",
               },
             },
             required: ["collection"],
@@ -214,7 +394,18 @@ class PocketBaseServer {
               },
               data: {
                 type: "object",
-                description: "Updated record data",
+                description:
+                  "Updated record data with field values matching the collection schema. Can use field modifiers like fieldName+, +fieldName, fieldName-.",
+              },
+              expand: {
+                type: "string",
+                description:
+                  "Comma-separated list of relation fields to expand in the response (e.g. 'author,comments.user')",
+              },
+              fields: {
+                type: "string",
+                description:
+                  "Comma-separated fields to return in the response (e.g. 'id,title,author')",
               },
             },
             required: ["collection", "id", "data"],
@@ -244,13 +435,22 @@ class PocketBaseServer {
           inputSchema: {
             type: "object",
             properties: {
+              collection: {
+                type: "string",
+                description: "Auth collection name (default: 'users')",
+              },
               email: {
                 type: "string",
-                description: "User email",
+                description: "User email or identity field value",
               },
               password: {
                 type: "string",
                 description: "User password",
+              },
+              autoRefreshThreshold: {
+                type: "number",
+                description:
+                  "Time in seconds that will trigger token auto refresh before its expiration (default: 30 minutes)",
               },
             },
             required: ["email", "password"],
@@ -262,6 +462,10 @@ class PocketBaseServer {
           inputSchema: {
             type: "object",
             properties: {
+              collection: {
+                type: "string",
+                description: "Auth collection name (default: 'users')",
+              },
               email: {
                 type: "string",
                 description: "User email",
@@ -272,11 +476,21 @@ class PocketBaseServer {
               },
               passwordConfirm: {
                 type: "string",
-                description: "Password confirmation",
+                description: "Password confirmation (must match password)",
               },
-              name: {
-                type: "string",
-                description: "User name",
+              verified: {
+                type: "boolean",
+                description: "Whether the user is verified (default: false)",
+              },
+              emailVisibility: {
+                type: "boolean",
+                description:
+                  "Whether the user email is publicly visible (default: false)",
+              },
+              additionalData: {
+                type: "object",
+                description:
+                  "Additional user data fields specific to your auth collection",
               },
             },
             required: ["email", "password", "passwordConfirm"],
@@ -346,25 +560,76 @@ class PocketBaseServer {
                 type: "string",
                 description: "Collection name",
               },
-              newSchema: {
+              fields: {
                 type: "array",
-                description: "New collection schema",
+                description: "New collection fields configuration",
                 items: {
                   type: "object",
                   properties: {
-                    name: { type: "string" },
-                    type: { type: "string" },
-                    required: { type: "boolean" },
-                    options: { type: "object" },
+                    name: { type: "string", description: "Field name" },
+                    type: {
+                      type: "string",
+                      description: "Field type",
+                      enum: [
+                        "text",
+                        "number",
+                        "bool",
+                        "email",
+                        "url",
+                        "date",
+                        "select",
+                        "relation",
+                        "file",
+                        "json",
+                        "editor",
+                        "autodate",
+                      ],
+                    },
+                    required: {
+                      type: "boolean",
+                      description: "Whether the field is required",
+                    },
+                    options: {
+                      type: "object",
+                      description: "Field-specific options",
+                    },
+                    // Include additional field properties as needed
                   },
+                  required: ["name", "type"],
                 },
               },
               dataTransforms: {
                 type: "object",
-                description: "Field transformation mappings",
+                description:
+                  "Field transformation mappings for converting old field values to new ones",
+              },
+              name: {
+                type: "string",
+                description:
+                  "Optional new collection name if you want to rename the collection",
+              },
+              listRule: {
+                type: "string",
+                description: "Optional new rule for listing records",
+              },
+              viewRule: {
+                type: "string",
+                description: "Optional new rule for viewing records",
+              },
+              createRule: {
+                type: "string",
+                description: "Optional new rule for creating records",
+              },
+              updateRule: {
+                type: "string",
+                description: "Optional new rule for updating records",
+              },
+              deleteRule: {
+                type: "string",
+                description: "Optional new rule for deleting records",
               },
             },
-            required: ["collection", "newSchema"],
+            required: ["collection", "fields"],
           },
         },
         {
@@ -882,6 +1147,8 @@ class PocketBaseServer {
 
   private async createCollection(args: any) {
     try {
+      // Pass the args directly to the PocketBase SDK
+      // The sdk expects 'fields' parameter as per the documentation
       const result = await this.pb.collections.create({
         ...args,
       });
@@ -904,9 +1171,16 @@ class PocketBaseServer {
 
   private async createRecord(args: any) {
     try {
+      const options: any = {};
+
+      // Add optional parameters if provided
+      if (args.expand) options.expand = args.expand;
+      if (args.fields) options.fields = args.fields;
+
       const result = await this.pb
         .collection(args.collection)
-        .create(args.data);
+        .create(args.data, options);
+
       return {
         content: [
           {
@@ -927,17 +1201,21 @@ class PocketBaseServer {
   private async listRecords(args: any) {
     try {
       const options: any = {};
+
+      // Add all optional parameters if provided
       if (args.filter) options.filter = args.filter;
       if (args.sort) options.sort = args.sort;
-      if (args.page) options.page = args.page;
-      if (args.perPage) options.perPage = args.perPage;
+      if (args.expand) options.expand = args.expand;
+      if (args.fields) options.fields = args.fields;
+      if (args.skipTotal !== undefined) options.skipTotal = args.skipTotal;
+
+      // Get page and perPage with defaults
+      const page = args.page || 1;
+      const perPage = args.perPage || 50;
 
       const result = await this.pb
         .collection(args.collection)
-        .getList(options.page || 1, options.perPage || 50, {
-          filter: options.filter,
-          sort: options.sort,
-        });
+        .getList(page, perPage, options);
 
       return {
         content: [
@@ -958,9 +1236,16 @@ class PocketBaseServer {
 
   private async updateRecord(args: any) {
     try {
+      const options: any = {};
+
+      // Add optional parameters if provided
+      if (args.expand) options.expand = args.expand;
+      if (args.fields) options.fields = args.fields;
+
       const result = await this.pb
         .collection(args.collection)
-        .update(args.id, args.data);
+        .update(args.id, args.data, options);
+
       return {
         content: [
           {
@@ -1000,9 +1285,21 @@ class PocketBaseServer {
 
   private async authenticateUser(args: any) {
     try {
+      const collectionName = args.collection || "users";
+      const authOptions: any = {};
+
+      // Check if autoRefreshThreshold is provided
+      if (args.autoRefreshThreshold) {
+        // authWithPassword accepts an options object with autoRefreshThreshold
+        // This will trigger auto refresh or auto reauthentication in case
+        // the token has expired or is going to expire in the next X seconds.
+        authOptions.autoRefreshThreshold = args.autoRefreshThreshold;
+      }
+
       const authData = await this.pb
-        .collection("users")
-        .authWithPassword(args.email, args.password);
+        .collection(collectionName)
+        .authWithPassword(args.email, args.password, authOptions);
+
       return {
         content: [
           {
@@ -1022,12 +1319,31 @@ class PocketBaseServer {
 
   private async createUser(args: any) {
     try {
-      const result = await this.pb.collection("users").create({
+      const collectionName = args.collection || "users";
+
+      // Prepare user data
+      const userData: any = {
         email: args.email,
         password: args.password,
         passwordConfirm: args.passwordConfirm,
-        name: args.name,
-      });
+      };
+
+      // Add optional fields if provided
+      if (args.verified !== undefined) {
+        userData.verified = args.verified;
+      }
+
+      if (args.emailVisibility !== undefined) {
+        userData.emailVisibility = args.emailVisibility;
+      }
+
+      // Add any additional data fields
+      if (args.additionalData) {
+        Object.assign(userData, args.additionalData);
+      }
+
+      const result = await this.pb.collection(collectionName).create(userData);
+
       return {
         content: [
           {
@@ -1185,10 +1501,27 @@ class PocketBaseServer {
     try {
       // Create new collection with temporary name
       const tempName = `${args.collection}_migration_${Date.now()}`;
-      await this.pb.collections.create({
+
+      // Create a configuration object for the temporary collection
+      const collectionConfig: any = {
         name: tempName,
-        schema: args.newSchema,
-      });
+        fields: args.fields,
+      };
+
+      // Add optional collection configuration if provided
+      if (args.listRule !== undefined)
+        collectionConfig.listRule = args.listRule;
+      if (args.viewRule !== undefined)
+        collectionConfig.viewRule = args.viewRule;
+      if (args.createRule !== undefined)
+        collectionConfig.createRule = args.createRule;
+      if (args.updateRule !== undefined)
+        collectionConfig.updateRule = args.updateRule;
+      if (args.deleteRule !== undefined)
+        collectionConfig.deleteRule = args.deleteRule;
+
+      // Create the temporary collection
+      await this.pb.collections.create(collectionConfig);
 
       // Get all records from old collection
       const oldRecords = await this.pb
@@ -1216,6 +1549,7 @@ class PocketBaseServer {
         return newRecord;
       });
 
+      // Create records in the temporary collection
       for (const record of transformedRecords) {
         await this.pb.collection(tempName).create(record);
       }
@@ -1223,9 +1557,12 @@ class PocketBaseServer {
       // Delete old collection
       await this.pb.collections.delete(args.collection);
 
-      // Rename temp collection to original name
+      // Determine the final name for the collection
+      const finalName = args.name || args.collection;
+
+      // Rename temp collection to the final name
       const renamedCollection = await this.pb.collections.update(tempName, {
-        name: args.collection,
+        name: finalName,
       });
 
       return {
